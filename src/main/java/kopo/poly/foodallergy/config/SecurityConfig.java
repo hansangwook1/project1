@@ -4,6 +4,7 @@ import kopo.poly.foodallergy.domain.user.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,6 +31,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/join/**", "/find/**", "/food/**", "/map/**", "/css/**", "/js/**",
                                 "/api/search/popular").permitAll()   // [기능2] 인기 검색어는 비로그인도 조회
+                        .requestMatchers(HttpMethod.GET, "/api/foods/*/reviews").permitAll()   // [기능3] 리뷰 목록은 비로그인도 조회
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

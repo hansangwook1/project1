@@ -49,6 +49,25 @@
         .btn-favorite { width: 100%; background: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-favorite:hover { background: #fff0f0; }
         .btn-favorite.on { background: #e74c3c; color: white; }
+        /* [기능3] 리뷰 */
+        .review-card { max-width: 900px; margin: 0 auto 40px; padding: 0 24px; }
+        .review-box { background: white; border-radius: 12px; padding: 24px 28px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .review-title { font-size: 16px; font-weight: bold; margin-bottom: 14px; }
+        .review-form textarea, .review-edit textarea { width: 100%; min-height: 70px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; }
+        .review-form-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .review-count { font-size: 12px; color: #888; }
+        .btn-review { background: #3d7a3d; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .btn-review:hover { background: #2d5a2d; }
+        .btn-review-sub { background: white; color: #555; border: 1px solid #ddd; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-left: 4px; }
+        .btn-review-sub.danger { color: #e74c3c; border-color: #e74c3c; }
+        .review-login { font-size: 13px; color: #888; margin-bottom: 14px; }
+        .review-login a { color: #3d7a3d; }
+        .review-item { border-top: 1px solid #f0f0f0; padding: 14px 0; }
+        .review-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .review-nick { font-size: 13px; font-weight: bold; color: #333; }
+        .review-date { font-size: 12px; color: #aaa; margin-left: 8px; font-weight: normal; }
+        .review-content { font-size: 14px; color: #444; white-space: pre-wrap; word-break: break-all; }
+        .review-empty { font-size: 13px; color: #888; padding: 10px 0; }
     </style>
 </head>
 <body>
@@ -152,8 +171,30 @@
         </div>
     </div>
 </div>
+
+<!-- [기능3] 음식 리뷰 -->
+<div class="review-card" th:if="${food != null}">
+    <div class="review-box">
+        <div class="review-title">💬 리뷰 <span id="reviewTotal" style="font-size:13px; color:#888; font-weight:normal;"></span></div>
+
+        <div class="review-form" sec:authorize="isAuthenticated()">
+            <textarea id="reviewInput" maxlength="500" placeholder="이 음식을 먹어본 경험을 남겨주세요 (최대 500자)"></textarea>
+            <div class="review-form-bottom">
+                <span class="review-count"><span id="reviewLen">0</span> / 500</span>
+                <button type="button" class="btn-review" onclick="submitReview()">등록</button>
+            </div>
+        </div>
+        <div class="review-login" sec:authorize="isAnonymous()">
+            리뷰를 작성하려면 <a href="/login">로그인</a>해주세요.
+        </div>
+
+        <div id="reviewList"><div class="review-empty">불러오는 중...</div></div>
+    </div>
+</div>
+
 <script th:inline="javascript">
     const keyword = [[${keyword}]];
+    const reviewFoodCode = [[${food != null ? food.foodCode : ''}]];   // [기능3]
 
     // 검색 결과로 돌아가기
     document.getElementById('backLink').href =
@@ -196,6 +237,130 @@
             alert(err.message || '처리 중 오류가 발생했습니다.');
         }
     }
+
+    // ===== [기능3] 리뷰 =====
+    function csrfHeaders(json) {
+        const h = {};
+        h[document.querySelector('meta[name="_csrf_header"]').content] = document.querySelector('meta[name="_csrf"]').content;
+        if (json) h['Content-Type'] = 'application/json';
+        return h;
+    }
+
+    function formatDate(value) {
+        return value ? value.replace('T', ' ').substring(0, 16) : '';
+    }
+
+    async function showError(res) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || '처리 중 오류가 발생했습니다.');
+    }
+
+    // 목록 조회 → GET /api/foods/{foodCode}/reviews
+    async function loadReviews() {
+        const list = document.getElementById('reviewList');
+        if (!list) return;
+        try {
+            const res = await fetch('/api/foods/' + encodeURIComponent(reviewFoodCode) + '/reviews');
+            if (!res.ok) throw new Error('status ' + res.status);
+            const reviews = await res.json();
+            document.getElementById('reviewTotal').textContent = reviews.length + '개';
+
+            if (reviews.length === 0) {
+                list.innerHTML = '<div class="review-empty">아직 리뷰가 없어요. 첫 리뷰를 남겨보세요!</div>';
+                return;
+            }
+            list.innerHTML = '';
+            reviews.forEach(r => list.appendChild(renderReview(r)));
+        } catch (e) {
+            list.innerHTML = '<div class="review-empty">리뷰를 불러오지 못했어요.</div>';
+        }
+    }
+
+    // 리뷰 1개 화면 요소 만들기 (textContent 사용 → 리뷰 내용의 HTML 태그가 실행되지 않음, XSS 방지)
+    function renderReview(r) {
+        const item = document.createElement('div');
+        item.className = 'review-item';
+        item.innerHTML =
+            '<div class="review-head">' +
+            '  <div><span class="review-nick"></span><span class="review-date"></span></div>' +
+            '  <div class="review-actions"></div>' +
+            '</div>' +
+            '<div class="review-content"></div>';
+        item.querySelector('.review-nick').textContent = r.nickname;
+        item.querySelector('.review-date').textContent =
+            formatDate(r.createdAt) + (r.updatedAt ? ' (수정됨)' : '');
+        item.querySelector('.review-content').textContent = r.content;
+
+        if (r.mine) {
+            const actions = item.querySelector('.review-actions');
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn-review-sub';
+            editBtn.textContent = '수정';
+            editBtn.onclick = () => startEdit(item, r);
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn-review-sub danger';
+            delBtn.textContent = '삭제';
+            delBtn.onclick = () => deleteReview(r.reviewId);
+            actions.append(editBtn, delBtn);
+        }
+        return item;
+    }
+
+    // 등록 → POST /api/foods/{foodCode}/reviews
+    async function submitReview() {
+        const input = document.getElementById('reviewInput');
+        const content = input.value.trim();
+        if (!content) { alert('리뷰 내용을 입력해주세요.'); return; }
+
+        const res = await fetch('/api/foods/' + encodeURIComponent(reviewFoodCode) + '/reviews', {
+            method: 'POST', headers: csrfHeaders(true), body: JSON.stringify({ content: content })
+        });
+        if (res.ok) {
+            input.value = '';
+            document.getElementById('reviewLen').textContent = '0';
+            loadReviews();
+        } else {
+            showError(res);
+        }
+    }
+
+    // 수정 화면으로 전환
+    function startEdit(item, r) {
+        const box = item.querySelector('.review-content');
+        box.innerHTML = '<div class="review-edit"><textarea maxlength="500"></textarea>' +
+            '<div style="text-align:right; margin-top:6px;">' +
+            '<button class="btn-review-sub" data-act="cancel">취소</button>' +
+            '<button class="btn-review" data-act="save" style="margin-left:4px;">저장</button></div></div>';
+        const textarea = box.querySelector('textarea');
+        textarea.value = r.content;
+        box.querySelector('[data-act="cancel"]').onclick = () => loadReviews();
+        box.querySelector('[data-act="save"]').onclick = () => updateReview(r.reviewId, textarea.value);
+        item.querySelector('.review-actions').style.display = 'none';
+    }
+
+    // 수정 → PUT /api/reviews/{reviewId}
+    async function updateReview(reviewId, content) {
+        if (!content.trim()) { alert('리뷰 내용을 입력해주세요.'); return; }
+        const res = await fetch('/api/reviews/' + reviewId, {
+            method: 'PUT', headers: csrfHeaders(true), body: JSON.stringify({ content: content.trim() })
+        });
+        if (res.ok) loadReviews(); else showError(res);
+    }
+
+    // 삭제 → DELETE /api/reviews/{reviewId}
+    async function deleteReview(reviewId) {
+        if (!confirm('리뷰를 삭제할까요?')) return;
+        const res = await fetch('/api/reviews/' + reviewId, { method: 'DELETE', headers: csrfHeaders(false) });
+        if (res.ok) loadReviews(); else showError(res);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('reviewInput');
+        if (input) input.addEventListener('input', () => {
+            document.getElementById('reviewLen').textContent = input.value.length;
+        });
+        if (reviewFoodCode) loadReviews();
+    });
 
     function goMap(el) {
         const kw = btoa(encodeURIComponent(el.dataset.foodname));
