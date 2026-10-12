@@ -17,4 +17,7 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 
     // 내 찜 목록 (최근 찜한 순)
     List<Favorite> findByUserOrderByCreatedAtDesc(User user);
+
+    // [기능5] 회원 탈퇴 시 해당 회원의 찜 전체 삭제
+    void deleteByUser(User user);
 }

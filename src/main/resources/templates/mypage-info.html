@@ -3,6 +3,8 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>회원정보 수정 - 뭐먹을수있지?</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38,6 +40,11 @@
         .section-subtitle { font-size: 16px; font-weight: bold; margin-bottom: 20px; }
         .btn-save { background: #3d7a3d; color: white; border: none; padding: 13px 32px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
         .btn-save:hover { background: #2d5a2d; }
+        /* [기능5] 회원 탈퇴 */
+        .withdraw-box { max-width: 500px; border: 1px solid #ffcccc; background: #fffafa; border-radius: 10px; padding: 18px 20px; }
+        .withdraw-desc { font-size: 13px; color: #c0392b; margin-bottom: 14px; line-height: 1.6; }
+        .btn-withdraw { background: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 11px 24px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .btn-withdraw:hover { background: #e74c3c; color: white; }
     </style>
 </head>
 <body>
@@ -70,6 +77,7 @@
             <a href="/mypage/allergy">🚫 알레르기 관리</a>
             <a href="/mypage/info" class="active">🔒 회원정보 수정</a>
             <a href="/mypage/favorites">♥ 찜한 음식</a>
+            <a href="/mypage/history">🕘 내 검색 기록</a>
         </div>
     </div>
 
@@ -82,7 +90,7 @@
         </div>
         <div class="alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
-        <form action="/mypage/info" method="post">
+        <form action="/mypage/password" method="post">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
             <div class="form-group">
@@ -112,7 +120,44 @@
 
             <button type="submit" class="btn-save">변경 완료</button>
         </form>
+
+        <!-- [기능5] 회원 탈퇴 -->
+        <hr class="section-divider"/>
+        <div class="section-subtitle">회원 탈퇴</div>
+        <div class="withdraw-box">
+            <div class="withdraw-desc">
+                탈퇴하면 알레르기 설정, 찜한 음식, 작성한 리뷰, 검색 기록이 모두 삭제되며 되돌릴 수 없어요.
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label>비밀번호 확인</label>
+                <input type="password" id="withdrawPw" placeholder="현재 비밀번호를 입력하세요"/>
+            </div>
+            <button type="button" class="btn-withdraw" onclick="withdraw()">회원 탈퇴</button>
+        </div>
     </div>
 </div>
+
+<script>
+    // [기능5] 회원 탈퇴 → DELETE /api/users/me
+    async function withdraw() {
+        const password = document.getElementById('withdrawPw').value;
+        if (!password) { alert('비밀번호를 입력해주세요.'); return; }
+        if (!confirm('정말 탈퇴할까요? 모든 정보가 삭제되며 되돌릴 수 없어요.')) return;
+
+        const headers = { 'Content-Type': 'application/json' };
+        headers[document.querySelector('meta[name="_csrf_header"]').content] = document.querySelector('meta[name="_csrf"]').content;
+
+        const res = await fetch('/api/users/me', {
+            method: 'DELETE', headers: headers, body: JSON.stringify({ password: password })
+        });
+        if (res.ok) {
+            alert('탈퇴가 완료되었어요. 그동안 이용해주셔서 감사합니다.');
+            location.href = '/';
+        } else {
+            const err = await res.json().catch(() => ({}));
+            alert(err.message || '처리 중 오류가 발생했습니다.');
+        }
+    }
+</script>
 </body>
 </html>
