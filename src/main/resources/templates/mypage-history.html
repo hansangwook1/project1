@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title>내 검색 기록 - 뭐먹을수있지?</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', sans-serif; background: #f5f5f5; }
+        .navbar { background: #3d7a3d; padding: 12px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .navbar-left { display: flex; align-items: center; gap: 28px; }
+        .navbar-brand { color: white; font-size: 18px; font-weight: bold; text-decoration: none; }
+        .navbar-menu a { color: white; text-decoration: none; font-size: 14px; margin-right: 20px; }
+        .navbar-menu a.active { border-bottom: 2px solid #f5a623; padding-bottom: 2px; }
+        .navbar-right { display: flex; align-items: center; gap: 12px; color: white; font-size: 14px; }
+        .btn-logout { background: transparent; color: white; border: 1px solid white; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .layout { display: flex; min-height: calc(100vh - 52px); }
+        .sidebar { width: 220px; background: white; border-right: 1px solid #eee; padding: 24px 0; }
+        .sidebar-profile { text-align: center; padding: 0 20px 24px; border-bottom: 1px solid #eee; margin-bottom: 16px; }
+        .profile-icon { width: 64px; height: 64px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 10px; }
+        .profile-name { font-weight: bold; font-size: 15px; margin-bottom: 4px; }
+        .profile-email { font-size: 12px; color: #888; }
+        .sidebar-menu a { display: flex; align-items: center; gap: 10px; padding: 12px 20px; font-size: 14px; color: #555; text-decoration: none; }
+        .sidebar-menu a:hover { background: #f5f5f5; }
+        .sidebar-menu a.active { background: #f0f8f0; color: #3d7a3d; font-weight: bold; border-right: 3px solid #3d7a3d; }
+        .content { flex: 1; padding: 32px 40px; }
+        .content-title { font-size: 20px; font-weight: bold; margin-bottom: 24px; }
+        .alert-success { background: #3d7a3d; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .alert-success .close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 16px; }
+        .alert-error { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 8px; }
+        .form-group input { width: 100%; max-width: 500px; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fafafa; outline: none; }
+        .form-group input:focus { border-color: #3d7a3d; background: white; }
+        .form-group input:disabled { background: #eee; color: #888; cursor: not-allowed; }
+        .form-group input::placeholder { color: #bbb; }
+        .section-divider { border: none; border-top: 1px solid #eee; margin: 28px 0; }
+        .section-subtitle { font-size: 16px; font-weight: bold; margin-bottom: 20px; }
+        .btn-save { background: #3d7a3d; color: white; border: none; padding: 13px 32px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
+        .btn-save:hover { background: #2d5a2d; }
+        .his-top { display: flex; justify-content: space-between; align-items: center; max-width: 640px; margin-bottom: 16px; }
+        .his-note { font-size: 13px; color: #888; }
+        .btn-clear { background: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .btn-clear:hover { background: #fff0f0; }
+        .his-empty { background: white; border-radius: 12px; padding: 40px; text-align: center; color: #888; font-size: 14px; max-width: 640px; }
+        .his-item { display: flex; align-items: center; justify-content: space-between; background: white; border-radius: 10px; padding: 14px 20px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); max-width: 640px; }
+        .his-keyword { font-size: 15px; font-weight: bold; color: #333; cursor: pointer; }
+        .his-keyword:hover { color: #3d7a3d; }
+        .his-meta { font-size: 12px; color: #888; margin-top: 4px; }
+        .btn-his-del { background: white; color: #888; border: 1px solid #ddd; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+        .btn-his-del:hover { color: #e74c3c; border-color: #e74c3c; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="navbar-left">
+        <a href="/" class="navbar-brand">🥗 뭐먹을수있지?</a>
+        <div class="navbar-menu">
+            <a href="/">홈</a>
+            <a href="/food">음식 검색</a>
+            <a href="/mypage/allergy" class="active">마이페이지</a>
+        </div>
+    </div>
+    <div class="navbar-right">
+        <span sec:authentication="name"></span>님
+        <form action="/logout" method="post" style="display:inline;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn-logout">로그아웃</button>
+        </form>
+    </div>
+</nav>
+
+<div class="layout">
+    <div class="sidebar">
+        <div class="sidebar-profile">
+            <div class="profile-icon">👤</div>
+            <div class="profile-name" th:text="${user.nickname}">닉네임</div>
+            <div class="profile-email" th:text="${user.email}">이메일</div>
+        </div>
+        <div class="sidebar-menu">
+            <a href="/mypage/allergy">🚫 알레르기 관리</a>
+            <a href="/mypage/info">🔒 회원정보 수정</a>
+            <a href="/mypage/favorites">♥ 찜한 음식</a>
+            <a href="/mypage/history" class="active">🕘 내 검색 기록</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="content-title">내 검색 기록</div>
+
+        <div class="his-top" th:if="${!histories.isEmpty()}">
+            <span class="his-note">최근 검색한 20개까지 보여드려요. 검색어를 누르면 다시 검색해요.</span>
+            <button type="button" class="btn-clear" onclick="clearHistory()">전체 삭제</button>
+        </div>
+
+        <div class="his-empty" th:if="${histories.isEmpty()}">
+            아직 검색 기록이 없어요.
+        </div>
+
+        <div th:each="h : ${histories}" class="his-item" th:id="'his-' + ${h.id}">
+            <div>
+                <div class="his-keyword" th:text="${h.keyword}" th:data-keyword="${h.keyword}" onclick="research(this)">검색어</div>
+                <div class="his-meta" th:text="${#temporals.format(h.searchedAt, 'yyyy.MM.dd HH:mm')} + ' · 결과 ' + ${h.resultCount} + '건'"></div>
+            </div>
+            <button type="button" class="btn-his-del" th:data-id="${h.id}" onclick="deleteHistory(this)">삭제</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function csrfHeaders() {
+        const h = {};
+        h[document.querySelector('meta[name="_csrf_header"]').content] = document.querySelector('meta[name="_csrf"]').content;
+        return h;
+    }
+
+    // 검색어 다시 검색 (메인 검색과 같은 인코딩 방식)
+    function research(el) {
+        const bytes = new TextEncoder().encode(el.dataset.keyword);
+        const binary = Array.from(bytes).map(b => String.fromCharCode(b)).join('');
+        location.href = '/food/loading?keyword=' + btoa(binary);
+    }
+
+    // 1개 삭제 → DELETE /api/search/history/{id}
+    async function deleteHistory(btn) {
+        const res = await fetch('/api/search/history/' + encodeURIComponent(btn.dataset.id), {
+            method: 'DELETE', headers: csrfHeaders()
+        });
+        if (res.ok) {
+            document.getElementById('his-' + btn.dataset.id).remove();
+            if (document.querySelectorAll('.his-item').length === 0) location.reload();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            alert(err.message || '처리 중 오류가 발생했습니다.');
+        }
+    }
+
+    // 전체 삭제 → DELETE /api/search/history
+    async function clearHistory() {
+        if (!confirm('검색 기록을 모두 삭제할까요?')) return;
+        const res = await fetch('/api/search/history', { method: 'DELETE', headers: csrfHeaders() });
+        if (res.ok) {
+            const data = await res.json();
+            alert(data.deletedCount + '개의 검색 기록을 삭제했어요.');
+            location.reload();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            alert(err.message || '처리 중 오류가 발생했습니다.');
+        }
+    }
+</script>
+</body>
+</html>

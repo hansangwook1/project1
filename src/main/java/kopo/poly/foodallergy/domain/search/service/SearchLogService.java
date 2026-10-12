@@ -3,6 +3,7 @@ package kopo.poly.foodallergy.domain.search.service;
 import kopo.poly.foodallergy.domain.search.document.SearchLog;
 import kopo.poly.foodallergy.domain.search.repository.SearchLogRepository;
 import kopo.poly.foodallergy.dto.PopularKeywordDto;
+import kopo.poly.foodallergy.dto.SearchHistoryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -66,5 +67,28 @@ public class SearchLogService {
             result.add(new PopularKeywordDto(i + 1, top.get(i).getKey(), top.get(i).getValue()));
         }
         return result;
+    }
+
+    // [기능4] 내 검색 기록 조회 (최근 20개)
+    public List<SearchHistoryDto> getMyHistory(String email) {
+        return searchLogRepository.findTop20ByEmailOrderBySearchedAtDesc(email).stream()
+                .map(SearchHistoryDto::from)
+                .toList();
+    }
+
+    // [기능4] 검색 기록 1개 삭제 - 본인 기록만 가능
+    public void deleteMyHistory(String email, String logId) {
+        SearchLog log = searchLogRepository.findById(logId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "검색 기록을 찾을 수 없습니다."));
+
+        if (!email.equals(log.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인의 검색 기록만 삭제할 수 있습니다.");
+        }
+        searchLogRepository.delete(log);
+    }
+
+    // [기능4] 내 검색 기록 전체 삭제 → 삭제된 개수
+    public long deleteAllMyHistory(String email) {
+        return searchLogRepository.deleteByEmail(email);
     }
 }
