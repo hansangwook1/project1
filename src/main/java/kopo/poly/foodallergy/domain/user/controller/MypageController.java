@@ -2,6 +2,7 @@ package kopo.poly.foodallergy.domain.user.controller;
 
 import kopo.poly.foodallergy.domain.allergy.entity.AllergyItem;
 import kopo.poly.foodallergy.domain.allergy.entity.UserAllergy;
+import kopo.poly.foodallergy.domain.favorite.service.FavoriteService;
 import kopo.poly.foodallergy.domain.user.entity.User;
 import kopo.poly.foodallergy.domain.user.service.MypageService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.List;
 public class MypageController {
 
     private final MypageService mypageService;
+    private final FavoriteService favoriteService;
 
     // 알레르기 관리 페이지
     @GetMapping("/allergy")
@@ -55,6 +57,15 @@ public class MypageController {
         mypageService.saveAllergies(userDetails.getUsername(), allergyIds, customNames);
         model.addAttribute("successMessage", "알레르기 정보가 저장되었습니다.");
         return allergyPage(userDetails, model);
+    }
+
+    // [기능1] 찜한 음식 페이지
+    @GetMapping("/favorites")
+    public String favoritesPage(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        User user = mypageService.getUser(userDetails.getUsername());
+        model.addAttribute("user", user);
+        model.addAttribute("favorites", favoriteService.getFavorites(userDetails.getUsername()));
+        return "mypage-favorites";
     }
 
     // 회원정보 수정 페이지

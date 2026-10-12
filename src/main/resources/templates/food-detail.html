@@ -3,6 +3,9 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
+    <!-- [기능1] 찜 API 호출 시 CSRF 토큰을 헤더에 담기 위해 사용 -->
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>식품 상세 - 뭐먹을수있지?</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -43,6 +46,9 @@
         .my-allergy-tag { background: #f0f0f0; color: #555; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
         .alternative-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; font-size: 13px; cursor: pointer; }
         .alternative-item:hover { background: #f0f8f0; }
+        .btn-favorite { width: 100%; background: white; color: #e74c3c; border: 1px solid #e74c3c; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-favorite:hover { background: #fff0f0; }
+        .btn-favorite.on { background: #e74c3c; color: white; }
     </style>
 </head>
 <body>
@@ -110,6 +116,15 @@
             🍽 이 음식 파는 식당 찾기
         </button>
         <span class="btn-find-sub">현재 위치 기반으로 주변 식당을 찾아드려요</span>
+
+        <!-- [기능1] 찜 버튼 (로그인한 경우만 표시) -->
+        <button type="button" class="btn-favorite" sec:authorize="isAuthenticated()"
+                th:classappend="${isFavorite} ? 'on'"
+                th:data-foodcode="${food.foodCode}"
+                th:data-foodname="${food.foodName}"
+                th:data-favorite="${isFavorite}"
+                th:text="${isFavorite} ? '♥ 찜 취소' : '♡ 찜하기'"
+                onclick="toggleFavorite(this)">♡ 찜하기</button>
     </div>
 
     <!-- 사이드바 -->
@@ -148,6 +163,38 @@
         const foodCode = btoa(encodeURIComponent(el.dataset.altcode));
         const kw = btoa(encodeURIComponent(el.dataset.keyword));
         location.href = '/food/detail?foodCode=' + foodCode + '&keyword=' + kw;
+    }
+
+    // [기능1] 찜 추가 / 취소
+    async function toggleFavorite(btn) {
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+        const isFavorite = btn.dataset.favorite === 'true';
+        const foodCode = btn.dataset.foodcode;
+
+        let res;
+        if (isFavorite) {
+            res = await fetch('/api/favorites/' + encodeURIComponent(foodCode), {
+                method: 'DELETE',
+                headers: { [csrfHeader]: csrfToken }
+            });
+        } else {
+            res = await fetch('/api/favorites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+                body: JSON.stringify({ foodCode: foodCode, foodName: btn.dataset.foodname })
+            });
+        }
+
+        if (res.ok) {
+            const nowFavorite = !isFavorite;
+            btn.dataset.favorite = String(nowFavorite);
+            btn.classList.toggle('on', nowFavorite);
+            btn.textContent = nowFavorite ? '♥ 찜 취소' : '♡ 찜하기';
+        } else {
+            const err = await res.json().catch(() => ({}));
+            alert(err.message || '처리 중 오류가 발생했습니다.');
+        }
     }
 
     function goMap(el) {

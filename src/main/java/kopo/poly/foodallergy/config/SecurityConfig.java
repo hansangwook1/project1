@@ -28,7 +28,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/join/**", "/find/**", "/food/**", "/map/**", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/", "/login", "/join/**", "/find/**", "/food/**", "/map/**", "/css/**", "/js/**",
+                                "/api/search/popular").permitAll()   // [기능2] 인기 검색어는 비로그인도 조회
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

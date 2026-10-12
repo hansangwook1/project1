@@ -1,5 +1,6 @@
 package kopo.poly.foodallergy.domain.food.controller;
 
+import kopo.poly.foodallergy.domain.favorite.service.FavoriteService;
 import kopo.poly.foodallergy.domain.food.service.FoodService;
 import kopo.poly.foodallergy.dto.FoodDto;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.List;
 public class FoodController {
 
     private final FoodService foodService;
+    private final FavoriteService favoriteService;
 
     @GetMapping("/food/loading")
     public String loading(@RequestParam String keyword, Model model) {
@@ -119,6 +121,8 @@ public class FoodController {
             model.addAttribute("keyword", decodedKeyword);
             model.addAttribute("userAllergies", userAllergies);
             model.addAttribute("alternatives", foodService.getAlternatives(results));
+            // [기능1] 찜 버튼 상태 (이미 찜했으면 true)
+            model.addAttribute("isFavorite", favoriteService.isFavorite(email, food.getFoodCode()));
         }
 
         return "food-detail";
