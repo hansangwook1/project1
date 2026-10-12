@@ -41,7 +41,7 @@ public class UserController {
         return "join";
     }
 
-    @GetMapping("/join/allergy")
+    @RequestMapping(value = "/join/allergy", method = {RequestMethod.GET, RequestMethod.POST})
     public String joinAllergyPage(Model model) {
         List<AllergyItem> allergyItems = allergyService.findAll();
         model.addAttribute("allergyItems", allergyItems);
