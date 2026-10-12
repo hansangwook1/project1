@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>검색 중... - 뭐먹을수있지?</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 20px;
+        }
+        .loading-spinner {
+            width: 60px; height: 60px;
+            border: 5px solid #e0e0e0;
+            border-top-color: #3d7a3d;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 18px; font-weight: bold; color: #333; }
+        .loading-sub { font-size: 13px; color: #888; text-align: center; line-height: 1.8; }
+    </style>
+</head>
+<body>
+<div class="loading-spinner"></div>
+<div class="loading-text">검색 중...</div>
+<div class="loading-sub">
+    '<span th:text="${keyword}"></span>' 관련 식품을 불러오고 있어요<br>
+    알레르기 필터링을 적용하고 있습니다
+</div>
+
+<script th:inline="javascript">
+    const keyword = [[${keyword}]];
+    setTimeout(function() {
+        const encoded = btoa(unescape(encodeURIComponent(keyword)));
+        location.href = '/food/search?keyword=' + encoded;
+    }, 1500);
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+spring:
+  # 비밀값은 프로젝트 루트의 .env 파일에서 읽어옴 (.env는 Git에 올리지 않음)
+  config:
+    import: optional:file:.env[.properties]
+
+  thymeleaf:
+    cache: false
+  datasource:
+    url: ${DB_URL:jdbc:mariadb://localhost:3306/foodallergy}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+      password: ${REDIS_PASSWORD}
+  mongodb:
+    host: ${MONGO_HOST:localhost}
+    port: 27017
+    database: food_allergy_db
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  session:
+    store-type: redis
+    timeout: 7d
+
+food:
+  api:
+    key: ${FOOD_API_KEY}
+
+kakao:
+  api:
+    key: ${KAKAO_API_KEY}

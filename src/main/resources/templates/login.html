@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <title>로그인 - 뭐먹을수있지?</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Malgun Gothic', sans-serif; background: #f5f5f5; }
+
+    /* 상단 네비게이션 */
+    .navbar {
+      background-color: #3d7a3d;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .navbar-brand {
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .navbar-brand span { font-size: 20px; }
+    .navbar-menu a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      margin-right: 16px;
+    }
+    .navbar-menu a:hover { text-decoration: underline; }
+    .btn-join-nav {
+      background-color: #f5a623;
+      color: white;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn-join-nav:hover { background-color: #e09400; }
+
+    /* 로그인 카드 */
+    .login-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: calc(100vh - 52px);
+      padding: 40px 16px;
+    }
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .login-logo { font-size: 48px; margin-bottom: 12px; }
+    .login-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2d5a2d;
+      margin-bottom: 6px;
+    }
+    .login-subtitle {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 32px;
+    }
+
+    /* 폼 */
+    .form-group { margin-bottom: 16px; text-align: left; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: #c0392b;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #333;
+      background: #fafafa;
+      outline: none;
+    }
+    .form-group input:focus {
+      border-color: #3d7a3d;
+      background: white;
+    }
+    .form-group input::placeholder { color: #bbb; }
+
+    /* 에러 메시지 */
+    .error-msg {
+      background: #fff0f0;
+      border: 1px solid #ffcccc;
+      color: #c0392b;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    /* 로그인 버튼 */
+    .btn-login {
+      width: 100%;
+      background-color: #3d7a3d;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+      margin-bottom: 20px;
+    }
+    .btn-login:hover { background-color: #2d5a2d; }
+
+    /* 하단 링크 */
+    .login-links {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+    .login-links a { color: #888; text-decoration: none; }
+    .login-links a:hover { color: #3d7a3d; }
+    .login-links .divider { color: #ddd; }
+    .login-links .link-join {
+      color: #3d7a3d;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 상단 네비게이션 -->
+<nav class="navbar">
+  <div class="navbar-left">
+    <a href="/" class="navbar-brand">
+      <span>🥗</span> 뭐먹을수있지?
+    </a>
+    <div class="navbar-menu">
+      <a href="/">홈</a>
+      <a href="/food">음식 검색</a>
+    </div>
+  </div>
+  <button class="btn-join-nav" onclick="location.href='/join'">회원가입</button>
+</nav>
+
+<!-- 로그인 카드 -->
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="login-logo">🥗</div>
+    <div class="login-title">뭐먹을수있지?</div>
+    <div class="login-subtitle">알레르기 안심 식품 검색 서비스</div>
+
+    <!-- 로그인 실패 오류 메시지 -->
+    <div class="error-msg" th:if="${param.error}">
+      이메일 또는 비밀번호가 올바르지 않습니다.
+    </div>
+
+    <form action="/login" method="post">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" name="email" placeholder="이메일을 입력하세요" required/>
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" name="password" placeholder="비밀번호를 입력하세요" required/>
+      </div>
+
+      <button type="submit" class="btn-login">로그인</button>
+    </form>
+
+    <div class="login-links">
+      <a href="/find?tab=id">아이디 찾기</a>
+      <span class="divider">|</span>
+      <a href="/find?tab=pw">비밀번호 찾기</a>
+      <span class="divider">|</span>
+      <a href="/join" class="link-join">회원가입</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

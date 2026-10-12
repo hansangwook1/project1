@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <title>아이디/비밀번호 찾기 - 뭐먹을수있지?</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', sans-serif; background: #f5f5f5; }
+        .navbar {
+            background-color: #3d7a3d; padding: 12px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .navbar-left { display: flex; align-items: center; gap: 24px; }
+        .navbar-brand { color: white; font-size: 18px; font-weight: bold; text-decoration: none; }
+        .navbar-menu a { color: white; text-decoration: none; font-size: 14px; margin-right: 16px; }
+        .btn-login-nav {
+            background: transparent; color: white; border: 1px solid white;
+            padding: 7px 18px; border-radius: 6px; font-size: 14px; cursor: pointer;
+        }
+        .wrapper {
+            display: flex; justify-content: center; align-items: center;
+            min-height: calc(100vh - 52px); padding: 40px 16px;
+        }
+        .card {
+            background: white; border-radius: 16px; padding: 40px;
+            width: 100%; max-width: 500px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .card-title { font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 24px; }
+        .tabs { display: flex; border-bottom: 1px solid #eee; margin-bottom: 28px; }
+        .tab {
+            flex: 1; text-align: center; padding: 12px; font-size: 15px;
+            cursor: pointer; color: #999; border-bottom: 2px solid transparent;
+            text-decoration: none;
+        }
+        .tab.active { color: #3d7a3d; border-bottom: 2px solid #3d7a3d; font-weight: bold; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 8px; }
+        .input-row { display: flex; gap: 8px; }
+        .form-group input {
+            width: 100%; padding: 12px 14px; border: 1px solid #ddd;
+            border-radius: 8px; font-size: 14px; background: #fafafa; outline: none;
+        }
+        .form-group input:focus { border-color: #3d7a3d; background: white; }
+        .form-group input.success { border-color: #3d7a3d; background: #f0f8f0; }
+        .form-group input::placeholder { color: #bbb; }
+        .field-msg { font-size: 12px; margin-top: 5px; }
+        .field-msg.success { color: #3d7a3d; }
+        .field-msg.error { color: #e74c3c; }
+        .btn-send {
+            white-space: nowrap; background: white; border: 1px solid #3d7a3d;
+            color: #3d7a3d; padding: 12px 14px; border-radius: 8px;
+            font-size: 13px; cursor: pointer; font-weight: bold;
+        }
+        .btn-send:hover { background: #f0f8f0; }
+        .btn-confirm {
+            white-space: nowrap; background: white; border: 1px solid #3d7a3d;
+            color: #3d7a3d; padding: 12px 16px; border-radius: 8px;
+            font-size: 13px; cursor: pointer; font-weight: bold;
+        }
+        .btn-main {
+            width: 100%; background: #3d7a3d; color: white; border: none;
+            padding: 14px; border-radius: 8px; font-size: 16px;
+            font-weight: bold; cursor: pointer; margin-top: 8px; margin-bottom: 16px;
+        }
+        .btn-main:hover { background: #2d5a2d; }
+        .btn-main:disabled { background: #aaa; cursor: not-allowed; }
+        .link-back { display: block; text-align: center; font-size: 13px; color: #888; text-decoration: none; }
+        .link-back:hover { color: #3d7a3d; }
+        .alert-success {
+            background: #3d7a3d; color: white; padding: 14px 20px;
+            border-radius: 8px; font-size: 14px; margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .alert-success .close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 16px; }
+        .alert-error {
+            background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b;
+            padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="navbar-left">
+        <a href="/" class="navbar-brand">🥗 뭐먹을수있지?</a>
+        <div class="navbar-menu"><a href="/">홈</a></div>
+    </div>
+    <button class="btn-login-nav" onclick="location.href='/login'">로그인</button>
+</nav>
+
+<div class="wrapper">
+    <div class="card">
+
+        <div class="alert-success" th:if="${successMessage}" id="successBanner">
+            <span>✅ <span th:text="${successMessage}"></span></span>
+            <button class="close-btn" onclick="document.getElementById('successBanner').style.display='none'">×</button>
+        </div>
+
+        <div class="card-title" th:text="${tab == 'pw'} ? '비밀번호 찾기' : '아이디 / 비밀번호 찾기'">아이디 / 비밀번호 찾기</div>
+
+        <div class="tabs">
+            <a href="/find?tab=id" class="tab" th:classappend="${tab == 'id' or tab == null} ? ' active' : ''">아이디 찾기</a>
+            <a href="/find?tab=pw" class="tab" th:classappend="${tab == 'pw'} ? ' active' : ''">비밀번호 찾기</a>
+        </div>
+
+        <div class="alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+        <!-- 아이디 찾기 -->
+        <div th:if="${tab == 'id' or tab == null}">
+            <form action="/find/id" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div class="form-group">
+                    <label>가입 시 등록한 이메일을 입력해주세요.</label>
+                    <div class="input-row">
+                        <input type="email" id="idEmail" placeholder="이메일 입력" required/>
+                        <button type="button" class="btn-send" onclick="sendCode('id')">인증번호 발송</button>
+                    </div>
+                    <div class="field-msg" id="idEmailMsg"></div>
+                </div>
+                <div class="form-group">
+                    <label>인증번호</label>
+                    <div class="input-row">
+                        <input type="text" id="idCode" placeholder="인증번호 6자리 입력"/>
+                        <button type="button" class="btn-confirm" onclick="verifyCode('id')">확인</button>
+                    </div>
+                    <div class="field-msg" id="idCodeMsg"></div>
+                </div>
+                <input type="hidden" name="email" id="idEmailHidden"/>
+                <button type="submit" class="btn-main" id="idSubmitBtn" disabled>아이디 찾기</button>
+                <a href="/login" class="link-back">← 로그인으로 돌아가기</a>
+            </form>
+        </div>
+
+        <!-- 비밀번호 찾기 -->
+        <div th:if="${tab == 'pw'}">
+            <form action="/find/pw" method="post" id="pwForm">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div class="form-group">
+                    <label>가입 시 등록한 이메일을 입력해주세요.</label>
+                    <div class="input-row">
+                        <input type="email" id="pwEmail" name="email" placeholder="이메일 입력" required/>
+                        <button type="button" class="btn-send" onclick="sendCode('pw')">인증번호 발송</button>
+                    </div>
+                    <div class="field-msg" id="pwEmailMsg"></div>
+                </div>
+                <div class="form-group" id="pwCodeGroup" style="display:none;">
+                    <label>인증번호</label>
+                    <div class="input-row">
+                        <input type="text" id="pwCode" placeholder="인증번호 6자리 입력"/>
+                        <button type="button" class="btn-confirm" onclick="verifyCode('pw')">확인</button>
+                    </div>
+                    <div class="field-msg" id="pwCodeMsg"></div>
+                </div>
+                <div class="form-group" id="newPwGroup" style="display:none;">
+                    <label>새 비밀번호</label>
+                    <input type="password" name="newPassword" placeholder="새 비밀번호를 입력하세요"/>
+                </div>
+                <div class="form-group" id="newPwConfirmGroup" style="display:none;">
+                    <label>새 비밀번호 확인</label>
+                    <input type="password" name="newPasswordConfirm" placeholder="새 비밀번호를 다시 입력하세요"/>
+                </div>
+                <button type="submit" class="btn-main" id="pwSubmitBtn" disabled>비밀번호 변경</button>
+                <a href="/login" class="link-back">← 로그인으로 돌아가기</a>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const csrf = document.querySelector('meta[name="_csrf"]').content;
+
+    function sendCode(type) {
+        const email = document.getElementById(type + 'Email').value;
+        if (!email) { alert('이메일을 입력해주세요.'); return; }
+
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = '발송 중...';
+
+        fetch('/find/send-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-TOKEN': csrf
+            },
+            body: 'email=' + encodeURIComponent(email)
+        })
+            .then(res => res.json())
+            .then(data => {
+                const msg = document.getElementById(type + 'EmailMsg');
+                if (data.success) {
+                    msg.className = 'field-msg success';
+                    msg.textContent = '✓ 인증번호가 발송되었습니다.';
+                    if (type === 'pw') {
+                        document.getElementById('pwCodeGroup').style.display = 'block';
+                    }
+                } else {
+                    msg.className = 'field-msg error';
+                    msg.textContent = data.message || '발송에 실패했습니다.';
+                }
+                btn.disabled = false;
+                btn.textContent = '인증번호 발송';
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.textContent = '인증번호 발송';
+                alert('오류가 발생했습니다.');
+            });
+    }
+
+    function verifyCode(type) {
+        const email = document.getElementById(type + 'Email').value;
+        const code = document.getElementById(type + 'Code').value;
+        if (!code) { alert('인증번호를 입력해주세요.'); return; }
+
+        fetch('/find/verify-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-TOKEN': csrf
+            },
+            body: 'email=' + encodeURIComponent(email) + '&code=' + encodeURIComponent(code)
+        })
+            .then(res => res.json())
+            .then(data => {
+                const msg = document.getElementById(type + 'CodeMsg');
+                if (data.success) {
+                    msg.className = 'field-msg success';
+                    msg.textContent = '✓ 인증이 완료되었습니다.';
+                    if (type === 'id') {
+                        document.getElementById('idEmailHidden').value = email;
+                        document.getElementById('idSubmitBtn').disabled = false;
+                    } else {
+                        document.getElementById('newPwGroup').style.display = 'block';
+                        document.getElementById('newPwConfirmGroup').style.display = 'block';
+                        document.getElementById('pwSubmitBtn').disabled = false;
+                    }
+                } else {
+                    msg.className = 'field-msg error';
+                    msg.textContent = data.message;
+                }
+            });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>식품 상세 - 뭐먹을수있지?</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', sans-serif; background: #f5f5f5; }
+        .navbar { background: #3d7a3d; padding: 12px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .navbar-left { display: flex; align-items: center; gap: 28px; }
+        .navbar-brand { color: white; font-size: 18px; font-weight: bold; text-decoration: none; }
+        .navbar-menu a { color: white; text-decoration: none; font-size: 14px; margin-right: 20px; }
+        .navbar-menu a.active { border-bottom: 2px solid #f5a623; padding-bottom: 2px; }
+        .navbar-right { color: white; font-size: 14px; }
+        .breadcrumb { padding: 12px 32px; font-size: 13px; color: #888; border-bottom: 1px solid #eee; background: white; }
+        .breadcrumb a { color: #888; text-decoration: none; }
+        .breadcrumb a:hover { color: #3d7a3d; }
+        .content { max-width: 900px; margin: 28px auto; padding: 0 24px; display: grid; grid-template-columns: 1fr 260px; gap: 24px; }
+        .main-card { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .food-title { font-size: 24px; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+        .badge-safe { background: #f0f8f0; color: #3d7a3d; border: 1px solid #3d7a3d; padding: 4px 14px; border-radius: 20px; font-size: 13px; }
+        .badge-danger { background: #fff0f0; color: #e74c3c; border: 1px solid #e74c3c; padding: 4px 14px; border-radius: 20px; font-size: 13px; }
+        .allergy-notice-safe { background: #f0f8f0; border: 1px solid #3d7a3d; color: #2d5a2d; padding: 14px 18px; border-radius: 10px; font-size: 14px; margin-bottom: 20px; }
+        .allergy-notice-danger { background: #fff0f0; border: 1px solid #e74c3c; color: #c0392b; padding: 14px 18px; border-radius: 10px; font-size: 14px; margin-bottom: 20px; }
+        .allergy-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .allergy-badge { background: #e74c3c; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
+        .nutrition-title { font-size: 14px; color: #888; margin-bottom: 14px; }
+        .nutrition-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .nutrition-card { background: #f9f9f9; border-radius: 10px; padding: 16px; text-align: center; }
+        .nutrition-value { font-size: 22px; font-weight: bold; color: #3d7a3d; }
+        .nutrition-label { font-size: 12px; color: #888; margin-top: 4px; }
+        .nutrition-table { width: 100%; border-collapse: collapse; }
+        .nutrition-table tr { border-bottom: 1px solid #f0f0f0; }
+        .nutrition-table td { padding: 12px 0; font-size: 14px; }
+        .nutrition-table td:last-child { text-align: right; font-weight: bold; }
+        .btn-find-restaurant { width: 100%; background: #3d7a3d; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .btn-find-restaurant:hover { background: #2d5a2d; }
+        .btn-find-sub { display: block; text-align: center; font-size: 12px; color: #888; margin-top: 6px; }
+        .sidebar-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .sidebar-card-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+        .my-allergy-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .my-allergy-tag { background: #f0f0f0; color: #555; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+        .alternative-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; font-size: 13px; cursor: pointer; }
+        .alternative-item:hover { background: #f0f8f0; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="navbar-left">
+        <a href="/" class="navbar-brand">🥗 뭐먹을수있지?</a>
+        <div class="navbar-menu">
+            <a href="/">홈</a>
+            <a href="/food" class="active">음식 검색</a>
+            <a href="/mypage/allergy" sec:authorize="isAuthenticated()">마이페이지</a>
+        </div>
+    </div>
+    <div class="navbar-right" sec:authorize="isAuthenticated()">
+        <span sec:authentication="name"></span>님
+    </div>
+</nav>
+
+<div class="breadcrumb">
+    <a id="backLink" href="#">← 검색 결과</a>
+    / <span th:text="${food != null ? food.foodName : ''}"></span>
+</div>
+
+<div class="content" th:if="${food != null}">
+    <div class="main-card">
+        <div class="food-title">
+            <span th:text="${food.foodName}"></span>
+            <span th:if="${food.safe}" class="badge-safe">✓ 안전</span>
+            <span th:if="${!food.safe}" class="badge-danger">⚠ 위험</span>
+        </div>
+
+        <div class="allergy-notice-safe" th:if="${food.safe}">
+            ✅ 이 음식은 설정된 알레르기 성분이 포함되어 있지 않아요!
+        </div>
+        <div class="allergy-notice-danger" th:if="${!food.safe}">
+            ⚠ 주의! 알레르기 성분이 포함되어 있어요
+            <div class="allergy-badges">
+                <span class="allergy-badge" th:each="a : ${food.containedAllergies}" th:text="${a}"></span>
+            </div>
+        </div>
+
+        <div class="nutrition-title">영양성분 (100g 기준)</div>
+        <div class="nutrition-grid">
+            <div class="nutrition-card">
+                <div class="nutrition-value" th:text="${food.energy}"></div>
+                <div class="nutrition-label">열량(kcal)</div>
+            </div>
+            <div class="nutrition-card">
+                <div class="nutrition-value" th:text="${food.protein}"></div>
+                <div class="nutrition-label">단백질(g)</div>
+            </div>
+            <div class="nutrition-card">
+                <div class="nutrition-value" th:text="${food.carbohydrate}"></div>
+                <div class="nutrition-label">탄수화물(g)</div>
+            </div>
+        </div>
+
+        <table class="nutrition-table">
+            <tr><td>지방</td><td th:text="${food.fat} + ' g'"></td></tr>
+            <tr><td>나트륨</td><td th:text="${food.sodium} + ' mg'"></td></tr>
+        </table>
+
+        <button class="btn-find-restaurant"
+                th:data-foodname="${food.foodName}"
+                onclick="goMap(this)">
+            🍽 이 음식 파는 식당 찾기
+        </button>
+        <span class="btn-find-sub">현재 위치 기반으로 주변 식당을 찾아드려요</span>
+    </div>
+
+    <!-- 사이드바 -->
+    <div>
+        <div class="sidebar-card" th:if="${!userAllergies.isEmpty()}" style="margin-bottom: 16px;">
+            <div class="sidebar-card-title" th:if="${food.safe}">✅ 내 알레르기</div>
+            <div class="sidebar-card-title" th:if="${!food.safe}" style="color:#e74c3c;">⚠ 포함된 알레르기</div>
+            <div class="my-allergy-tags">
+                <span class="my-allergy-tag" th:each="a : ${food.safe ? userAllergies : food.containedAllergies}" th:text="${a}"></span>
+            </div>
+        </div>
+
+        <div class="sidebar-card" th:if="${!alternatives.isEmpty()}">
+            <div class="sidebar-card-title">🔄 대체 식품 추천</div>
+            <div th:each="alt : ${alternatives}" class="alternative-item"
+                 th:data-altcode="${alt.foodCode}"
+                 th:data-keyword="${keyword}"
+                 onclick="goAlt(this)">
+                <div>
+                    <div style="font-weight:bold;" th:text="${alt.foodName}"></div>
+                    <div style="color:#888;font-size:12px;" th:text="${alt.energy} + 'kcal · 알레르기 성분 없음'"></div>
+                </div>
+                <span style="color:#3d7a3d;font-size:12px;font-weight:bold;">✓ 안전</span>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:inline="javascript">
+    const keyword = [[${keyword}]];
+
+    // 검색 결과로 돌아가기
+    document.getElementById('backLink').href =
+        '/food/search?keyword=' + btoa(encodeURIComponent(keyword));
+
+    function goAlt(el) {
+        const foodCode = btoa(encodeURIComponent(el.dataset.altcode));
+        const kw = btoa(encodeURIComponent(el.dataset.keyword));
+        location.href = '/food/detail?foodCode=' + foodCode + '&keyword=' + kw;
+    }
+
+    function goMap(el) {
+        const kw = btoa(encodeURIComponent(el.dataset.foodname));
+        location.href = '/map?keyword=' + kw;
+    }
+</script>
+</body>
+</html>

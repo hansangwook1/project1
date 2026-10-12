@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>검색 결과 - 뭐먹을수있지?</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', sans-serif; background: #f5f5f5; }
+        .hero { background: #3d7a3d; padding: 20px 32px; }
+        .search-bar { display: flex; }
+        .search-bar input { flex: 1; padding: 14px 18px; border: 2px solid #f5a623; border-radius: 8px 0 0 8px; font-size: 15px; outline: none; }
+        .search-bar button { background: #f5a623; color: white; border: none; padding: 14px 28px; border-radius: 0 8px 8px 0; font-size: 15px; font-weight: bold; cursor: pointer; }
+        .content { max-width: 900px; margin: 0 auto; padding: 20px 24px; }
+        .alert-banner {
+            background: #e67e22; color: white; padding: 12px 20px;
+            border-radius: 8px; font-size: 14px; margin-bottom: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .alert-banner .close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 16px; }
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+        .filter-tab {
+            padding: 7px 18px; border-radius: 20px; font-size: 14px;
+            border: 1px solid #ddd; background: white; cursor: pointer; color: #555;
+        }
+        .filter-tab.active { background: #3d7a3d; color: white; border-color: #3d7a3d; }
+        .filter-tab.danger.active { background: #e74c3c; border-color: #e74c3c; }
+        .result-count { font-size: 13px; color: #888; margin-bottom: 16px; }
+        .food-card {
+            background: white; border-radius: 10px; padding: 16px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            cursor: pointer; text-decoration: none; color: inherit;
+        }
+        .food-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        .food-card.danger { background: #fff8f8; border-left: 3px solid #e74c3c; }
+        .food-card-left { display: flex; align-items: center; gap: 14px; }
+        .food-icon { width: 44px; height: 44px; background: #f0f8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .food-icon.danger { background: #fff0f0; }
+        .food-name { font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+        .food-info { font-size: 13px; color: #888; }
+        .food-allergy { font-size: 12px; color: #e74c3c; margin-top: 3px; }
+        .badge-safe { background: #f0f8f0; color: #3d7a3d; border: 1px solid #3d7a3d; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; }
+        .badge-danger { background: #fff0f0; color: #e74c3c; border: 1px solid #e74c3c; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; }
+        .no-result { text-align: center; padding: 60px 0; }
+        .no-result-icon { font-size: 52px; margin-bottom: 16px; }
+        .no-result-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+        .no-result-sub { font-size: 14px; color: #888; margin-bottom: 20px; }
+        .popular-tags { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .popular-tag { background: white; border: 1px solid #ddd; color: #555; padding: 7px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; }
+        .btn-retry { background: #3d7a3d; color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="hero">
+    <form id="resultSearchForm" onsubmit="handleSearch(event)">
+        <div class="search-bar">
+            <input type="text" id="resultKeywordInput" th:value="${keyword}" required/>
+            <button type="submit">검색</button>
+        </div>
+    </form>
+</div>
+
+<div class="content">
+    <!-- 위험 식품 있을 때 알림 배너 -->
+    <div class="alert-banner" th:if="${dangerCount > 0}" id="alertBanner">
+        <span>⚠ <span th:text="${dangerCount}"></span>개 식품에 알레르기 성분이 포함되어 있어요.</span>
+        <button class="close-btn" onclick="document.getElementById('alertBanner').style.display='none'">×</button>
+    </div>
+
+    <!-- 결과 없을 때 -->
+    <div th:if="${results.isEmpty()}">
+        <div class="no-result">
+            <div class="no-result-icon">😢</div>
+            <div class="no-result-title">검색 결과가 없어요</div>
+            <div class="no-result-sub">다른 키워드로 검색해보세요</div>
+            <div class="popular-tags">
+                <span class="popular-tag" onclick="goPopular('비빔밥')">비빔밥</span>
+                <span class="popular-tag" onclick="goPopular('된장찌개')">된장찌개</span>
+                <span class="popular-tag" onclick="goPopular('제육볶음')">제육볶음</span>
+            </div>
+            <button class="btn-retry" onclick="location.href='/food'">다시 검색하기</button>
+        </div>
+    </div>
+
+    <!-- 결과 있을 때 -->
+    <div th:if="${!results.isEmpty()}">
+        <div class="filter-tabs">
+            <button class="filter-tab active" id="tab-all" onclick="filterResults('all')">전체 (<span th:text="${totalCount}"></span>)</button>
+            <button class="filter-tab" id="tab-safe" onclick="filterResults('safe')">안전 (<span th:text="${safeCount}"></span>)</button>
+            <button class="filter-tab danger" id="tab-danger" onclick="filterResults('danger')">위험 (<span th:text="${dangerCount}"></span>)</button>
+        </div>
+        <div class="result-count">총 <span th:text="${totalCount}"></span>개 결과 (안전 <span th:text="${safeCount}"></span>개 / 위험 <span th:text="${dangerCount}"></span>개)</div>
+
+        <div id="resultList">
+            <div th:each="food : ${results}"
+                 class="food-card"
+                 th:classappend="${!food.safe} ? ' danger' : ''"
+                 th:data-safe="${food.safe}"
+                 th:data-foodcode="${food.foodCode}"
+                 th:data-keyword="${keyword}"
+                 onclick="goDetail(this)">
+                <div class="food-card-left">
+                    <div class="food-icon" th:classappend="${!food.safe} ? ' danger' : ''">
+                        <span th:text="${!food.safe} ? '⚠️' : '🥗'"></span>
+                    </div>
+                    <div>
+                        <div class="food-name" th:text="${food.foodName}"></div>
+                        <div class="food-info">
+                            열량 <span th:text="${food.energy}"></span>kcal
+                            · 단백질 <span th:text="${food.protein}"></span>g
+                        </div>
+                        <div class="food-allergy" th:if="${!food.containedAllergies.isEmpty()}">
+                            포함: <span th:text="${#strings.listJoin(food.containedAllergies, ', ')}"></span>
+                        </div>
+                    </div>
+                </div>
+                <span th:if="${food.safe}" class="badge-safe">✓ 안전</span>
+                <span th:if="${!food.safe}" class="badge-danger">⚠ 위험</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleSearch(e) {
+        e.preventDefault();
+        const keyword = document.getElementById('resultKeywordInput').value.trim();
+        if (!keyword) return;
+        location.href = '/food/loading?keyword=' + encodeURIComponent(keyword);
+    }
+
+    function filterResults(type) {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + type).classList.add('active');
+
+        document.querySelectorAll('.food-card').forEach(card => {
+            const isSafe = card.dataset.safe === 'true';
+            if (type === 'all') card.style.display = 'flex';
+            else if (type === 'safe') card.style.display = isSafe ? 'flex' : 'none';
+            else if (type === 'danger') card.style.display = !isSafe ? 'flex' : 'none';
+        });
+    }
+
+    function goDetail(el) {
+        const foodCode = btoa(encodeURIComponent(el.dataset.foodcode));
+        const keyword = btoa(encodeURIComponent(el.dataset.keyword));
+        location.href = '/food/detail?foodCode=' + foodCode + '&keyword=' + keyword;
+    }
+
+    function goPopular(keyword) {
+        location.href = '/food/loading?keyword=' + encodeURIComponent(keyword);
+    }
+</script>
+</body>
+</html>

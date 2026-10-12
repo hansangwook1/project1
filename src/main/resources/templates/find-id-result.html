@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>아이디 찾기 결과 - 뭐먹을수있지?</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Malgun Gothic', sans-serif; background: #f5f5f5; }
+    .navbar {
+      background-color: #3d7a3d; padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .navbar-left { display: flex; align-items: center; gap: 24px; }
+    .navbar-brand { color: white; font-size: 18px; font-weight: bold; text-decoration: none; }
+    .navbar-menu a { color: white; text-decoration: none; font-size: 14px; }
+    .btn-login-nav {
+      background: transparent; color: white; border: 1px solid white;
+      padding: 7px 18px; border-radius: 6px; font-size: 14px; cursor: pointer;
+    }
+    .wrapper {
+      display: flex; justify-content: center; align-items: center;
+      min-height: calc(100vh - 52px); padding: 40px 16px;
+    }
+    .card {
+      background: white; border-radius: 16px; padding: 48px 40px;
+      width: 100%; max-width: 480px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .icon { font-size: 52px; margin-bottom: 16px; }
+    .title { font-size: 22px; font-weight: bold; color: #222; margin-bottom: 8px; }
+    .subtitle { font-size: 13px; color: #3d7a3d; margin-bottom: 24px; }
+    .result-box {
+      background: #f9f9f9; border-radius: 10px;
+      padding: 20px; margin-bottom: 28px;
+    }
+    .result-email { font-size: 18px; font-weight: bold; color: #3d7a3d; margin-bottom: 6px; }
+    .result-date { font-size: 13px; color: #999; }
+    .btn-login {
+      width: 100%; background: #3d7a3d; color: white; border: none;
+      padding: 14px; border-radius: 8px; font-size: 15px;
+      font-weight: bold; cursor: pointer; margin-bottom: 12px;
+    }
+    .btn-login:hover { background: #2d5a2d; }
+    .btn-find-pw {
+      width: 100%; background: white; color: #3d7a3d;
+      border: 1px solid #3d7a3d; padding: 14px; border-radius: 8px;
+      font-size: 15px; font-weight: bold; cursor: pointer;
+    }
+    .btn-find-pw:hover { background: #f0f8f0; }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-left">
+    <a href="/" class="navbar-brand">🥗 뭐먹을수있지?</a>
+    <div class="navbar-menu"><a href="/">홈</a></div>
+  </div>
+  <button class="btn-login-nav" onclick="location.href='/login'">로그인</button>
+</nav>
+
+<div class="wrapper">
+  <div class="card">
+    <div class="icon">📧</div>
+    <div class="title">아이디를 찾았어요!</div>
+    <div class="subtitle">가입하신 아이디(이메일) 정보입니다.</div>
+
+    <div class="result-box">
+      <div class="result-email" th:text="${maskedEmail}">hong***@gmail.com</div>
+      <div class="result-date">
+        가입일:
+        <span th:text="${#temporals.format(createdAt, 'yyyy년 M월 d일')}"></span>
+      </div>
+    </div>
+
+    <button class="btn-login" onclick="location.href='/login'">로그인하러 가기</button>
+    <button class="btn-find-pw" onclick="location.href='/find?tab=pw'">비밀번호 찾기</button>
+  </div>
+</div>
+</body>
+</html>

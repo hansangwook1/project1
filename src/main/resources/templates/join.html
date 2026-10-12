@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>회원가입 - 뭐먹을수있지?</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Malgun Gothic', sans-serif; background: #f5f5f5; }
+    .navbar {
+      background-color: #3d7a3d; padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .navbar-left { display: flex; align-items: center; gap: 24px; }
+    .navbar-brand {
+      color: white; font-size: 18px; font-weight: bold;
+      text-decoration: none; display: flex; align-items: center; gap: 8px;
+    }
+    .navbar-menu a { color: white; text-decoration: none; font-size: 14px; margin-right: 16px; }
+    .btn-login-nav {
+      background: transparent; color: white; border: 1px solid white;
+      padding: 7px 18px; border-radius: 6px; font-size: 14px; cursor: pointer;
+    }
+    .btn-login-nav:hover { background: rgba(255,255,255,0.15); }
+    .wrapper {
+      display: flex; justify-content: center; align-items: flex-start;
+      min-height: calc(100vh - 52px); padding: 40px 16px;
+    }
+    .card {
+      background: white; border-radius: 16px; padding: 40px;
+      width: 100%; max-width: 520px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .card-title { font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 24px; }
+
+    /* 스텝 인디케이터 */
+    .steps {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0; margin-bottom: 32px;
+    }
+    .step { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .step-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: bold;
+    }
+    .step.active .step-circle { background: #3d7a3d; color: white; }
+    .step.inactive .step-circle { background: #ddd; color: #999; }
+    .step-label { font-size: 12px; color: #999; }
+    .step.active .step-label { color: #3d7a3d; font-weight: bold; }
+    .step-line { width: 60px; height: 2px; background: #ddd; margin-bottom: 18px; }
+
+    /* 폼 */
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 13px; color: #c0392b; font-weight: bold; margin-bottom: 6px; }
+    .input-row { display: flex; gap: 8px; }
+    .form-group input {
+      width: 100%; padding: 12px 14px; border: 1px solid #ddd;
+      border-radius: 8px; font-size: 14px; background: #fafafa; outline: none;
+    }
+    .form-group input:focus { border-color: #3d7a3d; background: white; }
+    .form-group input::placeholder { color: #bbb; }
+    .form-group input.error { border-color: #e74c3c; }
+    .form-group input.success { border-color: #3d7a3d; }
+    .field-msg { font-size: 12px; margin-top: 4px; }
+    .field-msg.error { color: #e74c3c; }
+    .field-msg.success { color: #3d7a3d; }
+    .btn-check {
+      white-space: nowrap; background: white; border: 1px solid #3d7a3d;
+      color: #3d7a3d; padding: 12px 16px; border-radius: 8px;
+      font-size: 13px; cursor: pointer; font-weight: bold;
+    }
+    .btn-check:hover { background: #f0f8f0; }
+    .btn-next {
+      width: 100%; background: #3d7a3d; color: white; border: none;
+      padding: 14px; border-radius: 8px; font-size: 16px;
+      font-weight: bold; cursor: pointer; margin-top: 8px;
+    }
+    .btn-next:hover { background: #2d5a2d; }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-left">
+    <a href="/" class="navbar-brand">🥗 뭐먹을수있지?</a>
+    <div class="navbar-menu">
+      <a href="/">홈</a>
+      <a href="/food">음식 검색</a>
+    </div>
+  </div>
+  <button class="btn-login-nav" onclick="location.href='/login'">로그인</button>
+</nav>
+
+<div class="wrapper">
+  <div class="card">
+    <div class="card-title">회원가입</div>
+
+    <!-- 스텝 인디케이터 -->
+    <div class="steps">
+      <div class="step active">
+        <div class="step-circle">1</div>
+        <div class="step-label">기본 정보</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step inactive">
+        <div class="step-circle">2</div>
+        <div class="step-label">알레르기 설정</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step inactive">
+        <div class="step-circle">3</div>
+        <div class="step-label">가입 완료</div>
+      </div>
+    </div>
+
+    <form id="joinForm" action="/join/allergy" method="post">
+      <div class="form-group">
+        <label>이메일</label>
+        <div class  ="input-row">
+          <input type="email" id="email" name="email" placeholder="이메일을 입력하세요" required/>
+          <button type="button" class="btn-check" onclick="checkEmail()">중복 확인</button>
+        </div>
+        <div class="field-msg" id="emailMsg"></div>
+      </div>
+
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요" required/>
+      </div>
+
+      <div class="form-group">
+        <label>비밀번호 확인</label>
+        <input type="password" id="passwordConfirm" name="passwordConfirm"
+               placeholder="비밀번호를 다시 입력하세요" required/>
+        <div class="field-msg" id="pwMsg"></div>
+      </div>
+
+      <div class="form-group">
+        <label>닉네임</label>
+        <input type="text" id="nickname" name="nickname" placeholder="닉네임을 입력하세요" required/>
+      </div>
+
+      <button type="button" class="btn-next" onclick="goNext()">다음 →</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  let emailChecked = false;
+
+  function checkEmail() {
+    const email = document.getElementById('email').value;
+    const msg = document.getElementById('emailMsg');
+    if (!email) { alert('이메일을 입력해주세요.'); return; }
+    fetch('/join/check-email?email=' + encodeURIComponent(email))
+            .then(res => res.json())
+            .then(isDuplicated => {
+              if (isDuplicated) {
+                msg.className = 'field-msg error';
+                msg.textContent = '이미 사용 중인 이메일입니다.';
+                document.getElementById('email').className = 'error';
+                emailChecked = false;
+              } else {
+                msg.className = 'field-msg success';
+                msg.textContent = '사용 가능한 이메일입니다.';
+                document.getElementById('email').className = 'success';
+                emailChecked = true;
+              }
+            });
+  }
+
+  document.getElementById('passwordConfirm').addEventListener('input', function () {
+    const pw = document.getElementById('password').value;
+    const msg = document.getElementById('pwMsg');
+    if (this.value === pw) {
+      msg.className = 'field-msg success';
+      msg.textContent = '비밀번호가 일치합니다.';
+    } else {
+      msg.className = 'field-msg error';
+      msg.textContent = '비밀번호가 일치하지 않습니다.';
+    }
+  });
+
+  function goNext() {
+    if (!emailChecked) { alert('이메일 중복 확인을 해주세요.'); return; }
+    const pw = document.getElementById('password').value;
+    const pwc = document.getElementById('passwordConfirm').value;
+    if (pw !== pwc) { alert('비밀번호가 일치하지 않습니다.'); return; }
+    if (!document.getElementById('nickname').value) { alert('닉네임을 입력해주세요.'); return; }
+    document.getElementById('joinForm').submit();
+  }
+</script>
+</body>
+</html>
